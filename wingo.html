@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Wingo Prediction Tool</title>
+  <style>
+    :root {
+      --primary-bg: linear-gradient(to right, #c9d6ff, #e2e2e2);
+      --primary-text: #333;
+      --card-bg: white;
+    }
+    [data-theme="dark"] {
+      --primary-bg: linear-gradient(to right, #2b5876, #4e4376);
+      --primary-text: #fff;
+      --card-bg: #222;
+    }
+
+    /* Animated gradient background */
+    .animated-bg {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(270deg, #6a11cb, #2575fc, #ff4081, #00bcd4);
+      background-size: 800% 800%;
+      animation: gradientShift 20s ease infinite;
+      z-index: -10;
+      filter: brightness(0.8);
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--primary-bg);
+      color: var(--primary-text);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background 0.5s, color 0.5s;
+      overflow: hidden;
+      position: relative;
+      z-index: 0;
+    }
+
+    .intro-screen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      z-index: 9999;
+      animation: fadeOutIntro 2.5s ease-in-out forwards;
+    }
+
+    .intro-text {
+      color: white;
+      font-size: 36px;
+      font-weight: bold;
+      animation: zoomIn 1.2s ease-in-out;
+    }
+
+    @keyframes zoomIn {
+      0% { transform: scale(0); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes fadeOutIntro {
+      0% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; z-index: -1; }
+    }
+
+    .entry-screen, .container, .loading-screen {
+      background: var(--card-bg);
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      display: none;
+      z-index: 10;
+    }
+
+    .loading-screen {
+      flex-direction: column;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    /* Vibration animation for Wingo heading */
+    @keyframes vibration {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
+    .vibrate {
+      animation: vibration 0.3s ease-in-out;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      background-color: #6a11cb;
+      background-image: linear-gradient(315deg, #6a11cb 0%, #2575fc 74%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out, background 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    .result-box {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      animation: slideUp 0.5s ease forwards;
+    }
+
+    .big { color: #007bff; }
+    .small { color: #dc3545; }
+    .green { color: #28a745; }
+    .red { color: #e63946; }
+    .violet { color: #8e44ad; }
+    .number { color: #6f42c1; font-size: 24px; }
+
+    .highlight {
+      background-color: #f0f8ff;
+      padding: 8px;
+      border-radius: 8px;
+      display: inline-block;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      background: #eee;
+      border-radius: 50%;
+      border: none;
+      font-size: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+      transition: background 0.3s, transform 0.3s;
+      z-index: 20;
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.1);
+    }
+
+    .username-display {
+      font-size: 20px;
+      margin-bottom: 10px;
+      animation: colorShift 3s infinite alternate;
+    }
+
+    @keyframes colorShift {
+      0% { color: #ff4081; }
+      50% { color: #6a11cb; }
+      100% { color: #2575fc; }
+    }
+
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #6a11cb;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    /* smaller loader for prediction loading */
+    #predictLoading .loader {
+      width: 30px;
+      height: 30px;
+      border-width: 5px;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- Animated gradient background -->
+  <div class="animated-bg"></div>
+
+  <!-- Animated Intro -->
+  <div class="intro-screen" id="introScreen">
+    <h1 class="intro-text">🎮 Wingo Predictor</h1>
+  </div>
+
+  <!-- Name Entry -->
+  <div class="entry-screen" id="entryScreen">
+    <h2>👋 Welcome to Wingo Prediction</h2>
+    <input type="text" id="userNameInput" placeholder="Enter your name" />
+    <button onclick="startApp()">Start</button>
+  </div>
+
+  <!-- Loading Animation -->
+  <div class="loading-screen" id="loadingScreen">
+    <h2>Loading...</h2>
+    <div class="loader"></div>
+  </div>
+
+  <!-- Main App -->
+  <div class="container" id="mainApp">
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🔆</button>
+    <div class="username-display" id="userGreeting"></div>
+    <h2 id="mainHeading">🎲 Wingo Prediction Tool</h2>
+    <input type="number" id="inputNumber" placeholder="Enter 5-digit number" />
+    <button onclick="predictBingo()">Predict</button>
+
+    <!-- Prediction loading spinner -->
+    <div id="predictLoading" style="display:none; margin-top: 15px;">
+      <div class="loader"></div>
+    </div>
+
+    <div class="result-box number" id="numberResult"></div>
+    <div class="result-box" id="bigSmallResult"></div>
+    <div class="result-box" id="colorResult"></div>
+  </div>
+
+  <script>
+    let userName = '';
+
+    window.onload = function () {
+      setTimeout(() => {
+        document.getElementById('introScreen').style.display = 'none';
+        document.getElementById('entryScreen').style.display = 'block';
+      }, 2500);
+
+      // Set up vibration animation to run every 5 seconds on main heading
+      setInterval(() => {
+        const heading = document.getElementById('mainHeading');
+        heading.classList.add('vibrate');
+        // Remove the class after animation duration (0.3s)
+        setTimeout(() => heading.classList.remove('vibrate'), 300);
+      }, 5000);
+    };
+
+    function startApp() {
+      const nameInput = document.getElementById('userNameInput').value.trim();
+      if (nameInput === '') {
+        alert('Please enter your name to continue.');
+        return;
+      }
+      userName = nameInput;
+
+      document.getElementById('entryScreen').style.display = 'none';
+      document.getElementById('loadingScreen').style.display = 'flex';
+
+      setTimeout(() => {
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('userGreeting').textContent = `Hello, ${userName}! 🎉`;
+      }, 3000);
+    }
+
+    function predictBingo() {
+      const inputVal = document.getElementById('inputNumber').value.trim();
+      const numberEl = document.getElementById('numberResult');
+      const bigSmallEl = document.getElementById('bigSmallResult');
+      const colorEl = document.getElementById('colorResult');
+      const sound = document.getElementById('soundEffect');
+      const loadingEl = document.getElementById('predictLoading');
+
+      if (!/^[0-9]{5}$/.test(inputVal)) {
+        numberEl.innerHTML = '<span class="highlight">❗ Please enter a valid 5-digit number.</span>';
+        numberEl.className = 'result-box';
+        bigSmallEl.textContent = '';
+        colorEl.textContent = '';
+        return;
+      }
+
+      // Show loading spinner
+      loadingEl.style.display = 'block';
+
+      // Clear previous results immediately
+      numberEl.textContent = '';
+      bigSmallEl.textContent = '';
+      colorEl.textContent = '';
+
+      setTimeout(() => {
+        loadingEl.style.display = 'none';
+
+        let sum = inputVal.split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+        let lastDigit = parseInt(inputVal.slice(-1));
+        const predictedNum1 = (sum * 7 + lastDigit) % 10;
+        const predictedNum2 = (sum * 5 + lastDigit * 2) % 10;
+
+        numberEl.innerHTML = `<span class="highlight">🎯 Predicted Numbers: ${predictedNum1}, ${predictedNum2}</span>`;
+        numberEl.className = 'result-box number';
+
+        const avg = Math.round((predictedNum1 + predictedNum2) / 2);
+        const bigSmall = avg >= 5 ? 'Big' : 'Small';
+        bigSmallEl.innerHTML = `<span class="highlight">🔎 Prediction: ${bigSmall}</span>`;
+        bigSmallEl.className = 'result-box ' + (bigSmall === 'Big' ? 'big' : 'small');
+
+        let color = '';
+        if ([6, 2, 8, 4].includes(avg)) color = 'Red';
+        else if ([1, 7, 3, 9].includes(avg)) color = 'Green';
+        else color = 'Violet';
+
+        colorEl.innerHTML = `<span class="highlight">🎨 Color: ${color}</span>`;
+        colorEl.className = 'result-box ' + color.toLowerCase();
+
+        sound.play();
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      }, 300);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const toggleBtn = document.getElementById('themeToggle');
+      if (current === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        toggleBtn.textContent = '🔆';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        toggleBtn.textContent = '🌙';
+      }
+    }
+  </script>
+</body>
+</html>
